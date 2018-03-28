@@ -4,7 +4,6 @@ const web3 = require('./utils/web3');
 const utils = require('./utils/utils');
 const maker = require('./maker');
 
-const { Tub, Weth, Peth, Dai, Mkr } = maker.connectToContracts();
 // const makerAddresses = maker.maker;
 // const makerAddresses = maker.makerAddresses;
 const BN = web3.utils.BN;
@@ -38,6 +37,7 @@ class NodeMaker {
 		this._pkey = config.pkey;
 		this._chain = config.chain;
 		this.PRICE_DECIMALS = 10e26;
+		{ this._Tub, this._Weth, this._Peth, this._Dai, this._Mkr } = maker.connectToContracts(this._chain);
 	}
 
 	getConfig() {
@@ -45,7 +45,7 @@ class NodeMaker {
 	}
 
 	async getEthPrice() {
-		const gemPrice = await Tub.methods.tag().call();
+		const gemPrice = await this._Tub.methods.tag().call();
 		log.info(JSON.stringify(gemPrice) / this.PRICE_DECIMALS);
 		return gemPrice / this.PRICE_DECIMALS;
 	}

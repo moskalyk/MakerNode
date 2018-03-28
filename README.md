@@ -92,6 +92,8 @@ const drawnDai = await nodeMaker.collateralize(
 
 TODOs:
  [x] Add Docs
+ [ ] Estimate Gas
+ 
  [ ] Review Docs
  [ ] Create Tests
  [ ] Add to Travis build

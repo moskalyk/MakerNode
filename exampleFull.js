@@ -17,7 +17,8 @@ const daiAddress = maker.address['Dai'];
 const nodeMaker = new NodeMaker({
 	pkey: utils.pkey,
 	address: utils.address,
-	chain: 'kovan'
+	chain: 'kovan',
+	end: 'frontend'
 });
 
 (async () => {
@@ -25,19 +26,19 @@ const nodeMaker = new NodeMaker({
 		console.log(`Current Price of Eth: ${await nodeMaker.getEthPrice()}`);
 		console.log('--------------------------------');
 
-		const ethToCollateralize = new BN(1);
+		// const ethToCollateralize = new BN(1);
 
-		const wethWrapped = await nodeMaker.wrapEthToWeth(ethToCollateralize);
+		// const wethWrapped = await nodeMaker.wrapEthToWeth(ethToCollateralize);
 
-		await nodeMaker.joinWethToPeth(ethToCollateralize);
+		// await nodeMaker.joinWethToPeth(ethToCollateralize);
 
-		await nodeMaker.openCDP();
+		// await nodeMaker.openCDP();
 
-		const pethLocked = await nodeMaker.lockPeth(ethToCollateralize);
+		// const pethLocked = await nodeMaker.lockPeth(ethToCollateralize);
 
-		const dai = await nodeMaker.drawDai(10);
+		// const dai = await nodeMaker.drawDai(10);
 
-		console.log(dai);
+		// console.log(dai);
 
 
 	}catch(e){
