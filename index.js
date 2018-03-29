@@ -38,9 +38,6 @@ function addGasBuffer(gas) {
 	return gas += gasBuffer;
 }
 
-function padIndexToHex(i) {
-	return web3.utils.padLeft(web3.utils.toHex(i),64)
-}
 
 function txData(txCount, address, gas, gasPrice, encodeABI, chainId, to){
 	return {
@@ -75,7 +72,6 @@ function txDataWithValue(txCount, address, gas, gasPrice, encodeABI, chainId, to
 class NodeMaker {
 
 	constructor(config){
-		console.log(config);
 
 		config.chain == 'kovan' ? this._chainId = 42 : this._chainId = 1;
 		this._address = config.address;
@@ -93,27 +89,39 @@ class NodeMaker {
 		this._Mkr = contracts[4];
 	}
 
+	/*
+	* Generic wrapper / helper methods
+	*/
 	async getEthPrice() {
 		const gemPrice = await this._Tub.methods.tag().call();
 		return gemPrice / this.PRICE_DECIMALS;
 	}
-	async getEthPrice() {
-		return await this._web3.eth.gasPrice();
+	async getGasPrice() {
+		return await this._web3.eth.getGasPrice();
 	}
 
-	getContractMapping(address){
-		if(address == this._Tub.address) return this._Tub; 
-		else if(address == this._Weth.address) return this._Weth; 
-		else if(address == this._Peth.address) return this._Peth; 
-		else if(address == this._Dai.address) return this._Weth; 
-		else if(address == this._Mkr.address) return this._Mkr; 
+	padIndexToHex(i) {
+		return this._web3.utils.padLeft(this._web3.utils.toHex(i),64)
 	}
+
+	getContractMapping(address) {
+		if(address == this._Tub.options.address) return this._Tub; 
+		else if(address == this._Weth.options.address) return this._Weth; 
+		else if(address == this._Peth.options.address) return this._Peth; 
+		else if(address == this._Dai.options.address) return this._Dai; 
+		else if(address == this._Mkr.options.address) return this._Mkr; 
+	}
+
+	/*
+	*	MakerDao
+	*
+	*/
 
 	async wrapEthToWeth(value) {
 
 		// Convert value to wei
 		const bnValue = this._web3.utils.toWei(new this._web3.utils.BN(value), 'ether');
-		const to = this._Weth.address;
+		const to = this._Weth.options.address;
 		const encodeABI = await this._Weth.methods.deposit().encodeABI();
 		const estimatedGas = await this._Weth.methods.deposit().estimateGas({from: this._address});
 		const gas = addGasBuffer(estimatedGas);
@@ -133,7 +141,7 @@ class NodeMaker {
 	}
 
 	async openCDP() {
-		const to = this._Tub;
+		const to = this._Tub.options.address;
 		const encodeABI = await this._Tub.methods.open().encodeABI();
 		const estimatedGas = await this._Tub.methods.open().estimateGas({from: this._address});
 		const gas = addGasBuffer(estimatedGas);
@@ -152,16 +160,17 @@ class NodeMaker {
 
 	// Get ths index of the users CDP 
 	async getCDPByIndex(index) {
-		return await this._Tub.methods.cups(padIndexToHex(index)).call();
+		return await this._Tub.methods.cups(this.padIndexToHex(index)).call();
 	}
 
 	// Returns CDP Object
 	async getCDP() {
-		const cdpIndex = new this._web3.utils.BN(await this._Tub.methods.cupi().call());
+		const cdpIndex = await this._Tub.methods.cupi().call();
 		const cdpList = [];
 
-		for (var i = 0; i < cdpIndex; i++) 
+		for (var i = 0; i < cdpIndex; i++) {
 			cdpList.push(await this.getCDPByIndex(i));
+		}
 		
 		for (var i = 0; i < cdpList.length; i++) {
 			if (cdpList[i].lad.toLowerCase() === this._address.toLowerCase()){
@@ -176,10 +185,10 @@ class NodeMaker {
 	// for another onctract to act upon its behalf
 	async approveAllowance(allowerContract, spenderContract, allowance) {
 
-		const to = allowerContract.address;
-		const estimatedGas = await allowerContract.methods.approve(spenderContract.address, allowance).estimateGas({from: this._address});
+		const to = allowerContract.options.address;
+		const estimatedGas = await allowerContract.methods.approve(spenderContract.options.address, allowance).estimateGas({from: this._address});
 		const gas = addGasBuffer(estimatedGas);
-		const encodeABI = await allowerContract.methods.approve(spenderContract.address, allowance).encodeABI();
+		const encodeABI = await allowerContract.methods.approve(spenderContract.options.address, allowance).encodeABI();
 		const txCount = await this._web3.eth.getTransactionCount(this._address);
 
 		return txData(
@@ -209,7 +218,7 @@ class NodeMaker {
 	* Proxy is the one that acts on behalf of the Allower
 	*/
 	async getAllowance(allower, spender, proxy){
-		const proxyContract = getContractMapping(proxy);
+		const proxyContract = this.getContractMapping(proxy);
 		return await proxyContract.methods.allowance(allower, spender).call();
 	}
 
@@ -219,7 +228,7 @@ class NodeMaker {
 	*/
 	async cupIsSafe(){
 		const cdp = await this.getCDP();
-		const cupi = padIndexToHex(cdp.index);
+		const cupi = this.padIndexToHex(cdp.index);
 		return await this._Tub.methods.safe(cupi).call();
 	}
 
@@ -239,13 +248,13 @@ class NodeMaker {
 		}
 
 		// Check for the Allowance
-		const existingAllowance = await this.getAllowance(this._address, this._Tub.address, this._Weth.address);
+		const existingAllowance = await this.getAllowance(this._address, this._Tub.options.address, this._Weth.options.address);
 
 		// If there is not enough alowance
 		if(existingAllowance == 0 || existingAllowance < weth){
 			// Approve Allowance
-			const resAllowance = await this.approveAllowance(this._Weth.address, this._Tub.address, new this._web3.utils.BN(allowance));
-			const newAllowance = await this.getAllowance(this._address, this._Tub.address, this._Weth.address);
+			const resAllowance = await this.approveAllowance(this._Weth.options.address, this._Tub.options.address, new this._web3.utils.BN(allowance));
+			const newAllowance = await this.getAllowance(this._address, this._Tub.options.address, this._Weth.options.address);
 		}
 
 
@@ -256,6 +265,7 @@ class NodeMaker {
 		}catch(e){
 			return false;
 		}
+		const to = this._Weth.options.address;
 		const gas = addGasBuffer(estimatedGas);
 		const txCount = await this._web3.eth.getTransactionCount(this._address);
 		const encodeABI = await this._Tub.methods.join(weth).encodeABI();
@@ -288,10 +298,10 @@ class NodeMaker {
 		}
 
 		// Get Cup index
-		const cupi = padIndexToHex(cdp.index);
+		const cupi = this.padIndexToHex(cdp.index);
 		
 		// Estimate Gas
-		const to = this._Tub;
+		const to = this._Tub.options.address;
 		const estimatedGas = await this._Tub.methods.lock(cupi, peth).estimateGas({from: this._address});
 		const gas = addGasBuffer(estimatedGas);
 		const encodeABI = await this._Tub.methods.lock(cupi, peth).encodeABI();
@@ -317,16 +327,26 @@ class NodeMaker {
 		try{
 			cdp = await this.getCDP();
 		}catch(e){
+			console.log('CDP');
 			return false;
 		}
-
+		console.log(cdp);
+		
 		// Get Cup index
-		const cupi = padIndexToHex(cdp.index);
+		const cupi = this.padIndexToHex(cdp.index);
 		const estimatedGas = await this._Tub.methods.draw(cupi, dai).estimateGas({from: this._address});
 		const gas = addGasBuffer(estimatedGas);
-		const to = this._Tub;
+		const to = this._Tub.options.address;
 		const encodeABI = await this._Tub.methods.draw(cupi, dai).encodeABI();
-		const txCount = await this._web3.eth.getTransactionCount(this._address);
+		let txCount;
+
+		try{
+		txCount = await this._web3.eth.getTransactionCount(this._address);
+
+		}catch(e){
+			console.log("Errores")
+			console.log(e)
+		}
 
 		return txData(
 			txCount, 

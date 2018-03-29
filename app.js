@@ -16,6 +16,7 @@ const nodeMaker = new NodeMaker({
 		console.log('--------------------------------');
 
 		const ethToCollateralize = new web3.utils.BN(1);
+		const daiToDraw = 10;
 
 		const wethWrapped = await nodeMaker.wrapEthToWeth(ethToCollateralize);
 		console.log('--------------------------------');
@@ -37,10 +38,16 @@ const nodeMaker = new NodeMaker({
 		console.log('pethLocked');
 		console.log(pethLocked);
 
-		const dai = await nodeMaker.drawDai(10);
-		console.log('--------------------------------');
-		console.log('dai');
-		console.log(dai);
+		try{
+			const dai = await nodeMaker.drawDai(daiToDraw);
+			console.log('--------------------------------');
+			console.log('dai');
+			console.log(dai);
+
+		}catch(e){
+			console.log('Draw dai')
+			console.log(e)
+		}
 
 
 	}catch(e){
