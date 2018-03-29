@@ -335,10 +335,16 @@ class NodeMaker {
 		// Get Cup index
 		const cupi = this.padIndexToHex(cdp.index);
 		const estimatedGas = await this._Tub.methods.draw(cupi, dai).estimateGas({from: this._address});
+		try{
 		const gas = addGasBuffer(estimatedGas);
 		const to = this._Tub.options.address;
 		const encodeABI = await this._Tub.methods.draw(cupi, dai).encodeABI();
+		}catch(e){
+			console.log('Howdieeeee');
+			return false;
+		}
 		let txCount;
+
 
 		try{
 		txCount = await this._web3.eth.getTransactionCount(this._address);
