@@ -320,39 +320,24 @@ class NodeMaker {
 
 	async drawDai(dai){
 
-		dai = this._web3.utils.toWei(new this._web3.utils.BN(dai));
+		dai = new this._web3.utils.BN(dai);
 
 		let cdp;
 		//Get My CDP
 		try{
 			cdp = await this.getCDP();
 		}catch(e){
-			console.log('CDP');
 			return false;
 		}
-		console.log(cdp);
 		
 		// Get Cup index
 		const cupi = this.padIndexToHex(cdp.index);
+		// const estimatedGas = await Tub.methods.draw(cupi, dai).estimateGas({from: utils.address});
 		const estimatedGas = await this._Tub.methods.draw(cupi, dai).estimateGas({from: this._address});
-		try{
 		const gas = addGasBuffer(estimatedGas);
 		const to = this._Tub.options.address;
 		const encodeABI = await this._Tub.methods.draw(cupi, dai).encodeABI();
-		}catch(e){
-			console.log('Howdieeeee');
-			return false;
-		}
-		let txCount;
-
-
-		try{
-		txCount = await this._web3.eth.getTransactionCount(this._address);
-
-		}catch(e){
-			console.log("Errores")
-			console.log(e)
-		}
+		const txCount = await this._web3.eth.getTransactionCount(this._address);
 
 		return txData(
 			txCount, 
