@@ -121,6 +121,8 @@ class NodeMaker {
 
 		// Convert value to wei
 		const bnValue = this._web3.utils.toWei(new this._web3.utils.BN(value), 'ether');
+		console.log(bnValue);
+		
 		const to = this._Weth.options.address;
 		const encodeABI = await this._Weth.methods.deposit().encodeABI();
 		const estimatedGas = await this._Weth.methods.deposit().estimateGas({from: this._address});
