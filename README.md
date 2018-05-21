@@ -1,7 +1,7 @@
 
 # MakerNode
 
-Interact with MakerDao, simply, and programmatically.
+Interact with MakerDao, simply, and programmatically. (WIP + Tests not complete)
 
 A node module that abstracts terminology within the MakerDao ecosystem, to more seamlessly interact with the smart contracts. This module can be thought of as a wrapper module to this existing work that has been done by the Maker team.
 
@@ -9,8 +9,6 @@ A node module that abstracts terminology within the MakerDao ecosystem, to more 
 * Simplify intution for new users to use MakerDao
 * Remove the need of interacting with Web3 integrations
 * Flexibility and clarity in execution
-* 
-
 
 Note: This module is not meant to be a fully extensive way to interact with the MakerDao system.
 
